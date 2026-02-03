@@ -1,0 +1,25 @@
+# --- Python & Environment ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+.env
+*.key
+
+# --- IDE / Editor & OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.log
+
+# --- Data & Large Files ---
+# Ignore the entire data directory and all CSVs
+data/
+*.csv
+
+# --- Config Exceptions ---
+# Explicitly allow config files even if they are in ignored folders
+!config/**/*.json
+!config/**/*.yaml
+!config/**/*.yml

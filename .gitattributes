@@ -1,0 +1,10 @@
+# Handle line endings automatically for text files
+* text=auto
+
+# Force LF for files that must work in Docker/Linux
+Dockerfile text eol=lf
+*.sh text eol=lf
+*.py text eol=lf
+*.js text eol=lf
+*.json text eol=lf
+*.csv text eol=lf
