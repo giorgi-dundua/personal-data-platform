@@ -46,3 +46,7 @@ class Validator:
 
         logger.info(f"Validated data saved to {self.output_path}")
         return df
+
+    def run_with_count(self):
+        df = self.run()
+        return df, len(df)

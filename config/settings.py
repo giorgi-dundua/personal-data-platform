@@ -23,6 +23,7 @@ class AppConfig:
     NORMALIZED_DATA_DIR: Path = PROCESSED_DATA_DIR / "normalized"
     VALIDATED_DATA_DIR: Path = PROCESSED_DATA_DIR / "validated"
     MERGED_DATA_DIR: Path = PROCESSED_DATA_DIR / "merged"
+    PIPELINE_STATE_DIR: Path = PROCESSED_DATA_DIR / "pipeline_state.json"
 
     # --- Raw Filenames ---
     FN_RAW_GS: str = "bp_hr_google_sheets.csv"
