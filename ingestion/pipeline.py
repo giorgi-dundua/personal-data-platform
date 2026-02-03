@@ -11,20 +11,19 @@ class IngestionPipeline:
 
     def run(self):
         logger.info("Ingestion pipeline started")
+        results = {"success": [], "failed": []}  # Track results
 
         for source in self.sources:
             source_name = source.__class__.__name__
-            logger.info(f"Running source: {source_name}")
-
             try:
                 source.connect()
                 raw = source.fetch()
                 normalized = source.normalize(raw)
                 source.store(normalized)
-
-                logger.info(f"Source completed: {source_name}")
-
+                results["success"].append(source_name)
             except Exception as e:
-                logger.exception(f"Source failed: {source_name} | Error: {e}")
+                logger.exception(f"Source failed: {source_name}")
+                results["failed"].append(f"{source_name} ({type(e).__name__})")
 
-        logger.info("Ingestion pipeline finished")
+        # Final summary
+        logger.info(f"Ingestion finished. Success: {results['success']} | Failed: {results['failed']}")
