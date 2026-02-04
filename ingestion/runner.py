@@ -5,7 +5,7 @@ from config.logging import get_logger
 logger = get_logger("pipeline")
 
 
-class IngestionPipeline:
+class IngestionRunner:
     def __init__(self, sources: List[DataSource]):
         self.sources = sources
 

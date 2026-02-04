@@ -34,6 +34,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Skip downloading new data and use existing local raw files",
     )
+
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="Resume pipeline from last successful stage using pipeline_state.json",
+    )
     return parser.parse_args()
 
 def main():
@@ -54,7 +60,7 @@ def main():
 
     try:
         # Pass the skip_ingestion flag to the orchestrator
-        run_pipeline(skip_ingestion=args.skip_ingestion)
+        run_pipeline(resume=args.resume)
     except Exception as e:
         logger.critical(f"Pipeline crashed: {e}", exc_info=True)
 
