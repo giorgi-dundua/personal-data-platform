@@ -1,4 +1,5 @@
 import logging
+import sys
 from datetime import datetime
 from config.settings import config, BASE_DIR
 
@@ -9,13 +10,17 @@ LOG_FILE = LOG_DIR / f"{config.ENV}_{datetime.now().strftime('%Y-%m-%d')}.log"
 
 
 def setup_logging():
+    # Force UTF-8 for the FileHandler to support emojis in .log files
+    file_h = logging.FileHandler(LOG_FILE, encoding="utf-8")
+
+    # Force UTF-8 for the Terminal output (StreamHandler)
+    # This prevents the CP1252 'charmap' error on Windows
+    stream_h = logging.StreamHandler(sys.stdout)
+
     logging.basicConfig(
         level=logging.DEBUG if config.DEBUG else logging.INFO,
         format="%(asctime)s | %(levelname)s | %(name)s | %(message)s",
-        handlers=[
-            logging.FileHandler(LOG_FILE),
-            logging.StreamHandler()
-        ]
+        handlers=[file_h, stream_h]
     )
 
 
