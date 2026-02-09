@@ -1,3 +1,11 @@
+"""Pipeline node wrapper functions.
+
+Each function in this module represents a DAG node and encapsulates the
+end-to-end work for a logical pipeline stage (ingestion, normalization,
+validation, merge). The orchestrator invokes these functions based on the
+topologically sorted DAG.
+"""
+
 from ingestion.google_sheets_source import GoogleSheetsSource
 from ingestion.mi_band_drive_source import MiBandDriveSource
 from ingestion.runner import IngestionRunner
@@ -13,7 +21,13 @@ from config.settings import config
 
 # ---- DAG Node Wrappers ----
 
-def ingestion_stage():
+def ingestion_stage() -> bool:
+    """Ingestion stage: download raw data from external sources.
+
+    Orchestrates all configured ingestion sources (Google Sheets, Mi Band)
+    via the ``IngestionRunner``. Returns True on success so the orchestrator
+    can treat it as a simple passed/failed stage.
+    """
     sources = [
         GoogleSheetsSource(sheet_name="ADHD BP & HR"),
         MiBandDriveSource(),
@@ -22,7 +36,13 @@ def ingestion_stage():
     return True
 
 
-def normalization_stage():
+def normalization_stage() -> dict[str, int]:
+    """Normalization stage: produce canonical DataFrames from raw sources.
+
+    Returns:
+        Mapping from source name to row counts for the normalized outputs.
+        Used for pipeline state reporting and basic sanity checks.
+    """
     gs_df = GoogleSheetsNormalizer().run()
     mi_sleep, mi_hr = MiBandNormalizer().run()
     return {
@@ -32,7 +52,16 @@ def normalization_stage():
     }
 
 
-def validation_stage():
+def validation_stage() -> dict[str, int]:
+    """Validation stage: enforce schema and basic data quality rules.
+
+    Runs validation for BP, HR, and sleep datasets and writes validated
+    CSVs to the configured output paths.
+
+    Returns:
+        Mapping from dataset name (\"bp\", \"hr\", \"sleep\") to row counts
+        after validation.
+    """
     bp_df, bp_count = Validator(
         input_path=config.norm_bp_path,
         output_path=config.val_bp_path,
@@ -61,6 +90,14 @@ def validation_stage():
     }
 
 
-def merge_stage():
+def merge_stage() -> int:
+    """Merge stage: build the aggregated daily metrics dataset.
+
+    Uses validated BP, HR, and sleep inputs to create a merged daily
+    metrics CSV and returns the number of rows produced.
+
+    Returns:
+        Row count of the merged daily metrics DataFrame.
+    """
     merged_df, merged_count = merge_daily_metrics()
     return merged_count

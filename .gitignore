@@ -5,6 +5,13 @@ __pycache__/
 .venv/
 .env
 *.key
+*.token
+
+# --- Security (CRITICAL) ---
+# Ignore all JSON files in config to prevent leaking service account keys
+config/*.json
+# If you have specific non-secret config files, allow them specifically:
+# !config/public_settings.json
 
 # --- IDE / Editor & OS ---
 .vscode/
@@ -14,12 +21,26 @@ Thumbs.db
 *.log
 
 # --- Data & Large Files ---
-# Ignore the entire data directory and all CSVs
+# Ignore everything in the data directory
 data/
+# Catch-all for data files
 *.csv
+*.jsonl
+*.parquet
+
+# --- Databases (Registry) ---
+*.db
+*.sqlite
+*.sqlite3
+*.db-journal
+*.db-wal
 
 # --- Config Exceptions ---
-# Explicitly allow config files even if they are in ignored folders
-!config/**/*.json
+# Allow yaml/yml configs which are typically safe
 !config/**/*.yaml
 !config/**/*.yml
+
+# --- Documentation & Metadata ---
+docs/
+.cursor
+digest.txt

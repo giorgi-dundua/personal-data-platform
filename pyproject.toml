@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-data-platform"
+version = "0.1.0"
+description = "Personal data ingestion, processing, and orchestration platform"
+readme = "README.md"
+requires-python = ">=3.10"
+
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "ruff",
+    "black",
+    "mypy"
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = [
+    "pipeline*",
+    "config*",
+    "ingestion*",
+    "processing*",
+    "scripts*"
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]

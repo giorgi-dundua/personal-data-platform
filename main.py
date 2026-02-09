@@ -60,7 +60,7 @@ def main():
 
     try:
         # Pass the skip_ingestion flag to the orchestrator
-        run_pipeline(resume=args.resume)
+        run_pipeline(resume=args.resume, skip_ingestion=args.skip_ingestion)
     except Exception as e:
         logger.critical(f"Pipeline crashed: {e}", exc_info=True)
 

@@ -1,5 +1,8 @@
-"""
-Pipeline gates to ensure data integrity between stages.
+"""Pipeline gates to ensure data integrity between stages.
+
+Gates act as preconditions for DAG nodes. They verify the presence of
+expected input files before a stage is allowed to run, preventing
+downstream failures caused by missing artifacts.
 """
 from pathlib import Path
 from config.logging import get_logger
@@ -8,7 +11,15 @@ from config.settings import config
 logger = get_logger("gates")
 
 def require_files(stage: str, paths: list[Path]) -> bool:
-    """Generic gate: ensure required files exist before continuing."""
+    """Generic gate: ensure required files exist before continuing.
+
+    Args:
+        stage: Name of the stage that requires the input files.
+        paths: List of paths that must exist for the gate to pass.
+
+    Returns:
+        True if all files exist; False otherwise (and logs an error).
+    """
     missing = [p for p in paths if not p.exists()]
 
     if missing:
@@ -22,7 +33,11 @@ def require_files(stage: str, paths: list[Path]) -> bool:
     return True
 
 def ingestion_gate() -> bool:
-    """Verify raw files exist before normalization."""
+    """Verify raw files exist before normalization.
+
+    Ensures ingestion has successfully produced raw CSVs for both Google
+    Sheets and Mi Band sources before running the normalization stage.
+    """
     return require_files(
         stage="normalization",
         paths=[
@@ -32,7 +47,11 @@ def ingestion_gate() -> bool:
     )
 
 def normalization_gate() -> bool:
-    """Verify normalized files exist before validation."""
+    """Verify normalized files exist before validation.
+
+    Ensures the normalization stage has produced all expected normalized
+    datasets before running validators.
+    """
     return require_files(
         stage="validation",
         paths=[
@@ -43,7 +62,11 @@ def normalization_gate() -> bool:
     )
 
 def validation_gate() -> bool:
-    """Verify validated files exist before merging."""
+    """Verify validated files exist before merging.
+
+    Ensures all validated datasets are present before computing merged
+    daily metrics, protecting against partial or failed validation runs.
+    """
     return require_files(
         stage="merge_daily_metrics",
         paths=[
