@@ -10,8 +10,12 @@ __pycache__/
 # --- Security (CRITICAL) ---
 # Ignore all JSON files in config to prevent leaking service account keys
 config/*.json
-# If you have specific non-secret config files, allow them specifically:
-# !config/public_settings.json
+
+# Local secret keys
+.secrets/
+**/*service_account*.json
+**/*credentials*.json
+**/*secret*.json
 
 # --- IDE / Editor & OS ---
 .vscode/

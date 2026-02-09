@@ -78,10 +78,13 @@ class AppConfig:
     ]
 
     # --- Google Sheets ---
-    GOOGLE_SHEETS_KEY: str = os.getenv(
-        "GOOGLE_SHEETS_KEY",
-        str(BASE_DIR / "config" / "personal-data-platform-486113-d64b62f4c09a.json")
-    )
+    GOOGLE_SHEETS_KEY: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+
+    if not GOOGLE_SHEETS_KEY:
+        raise RuntimeError(
+            "Environment variable GOOGLE_APPLICATION_CREDENTIALS is not set. "
+            "Set it in your .env or system environment."
+        )
 
     GOOGLE_SHEETS_BP_ID: str = os.getenv("GOOGLE_SHEETS_BP_ID", "")
     GOOGLE_SHEETS_HR_ID: str = os.getenv("GOOGLE_SHEETS_HR_ID", "")
