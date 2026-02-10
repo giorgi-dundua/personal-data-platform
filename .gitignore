@@ -25,8 +25,19 @@ Thumbs.db
 *.log
 
 # --- Data & Large Files ---
-# Ignore everything in the data directory
-data/
+# Ignore all runtime data
+data/**
+
+# But keep folder structure
+!data/.gitkeep
+!data/raw/.gitkeep
+!data/raw/google_sheets/.gitkeep
+!data/raw/mi_band/.gitkeep
+!data/processed/.gitkeep
+!data/processed/normalized/.gitkeep
+!data/processed/validated/.gitkeep
+!data/processed/merged/.gitkeep
+
 # Catch-all for data files
 *.csv
 *.jsonl
