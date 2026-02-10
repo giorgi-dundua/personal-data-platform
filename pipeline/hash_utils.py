@@ -1,8 +1,9 @@
 """Hashing utilities for artifact identity and cache keys."""
 
 import hashlib
+import inspect
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Any
 
 
 def hash_file(path: Path, chunk_size: int = 8192) -> str:
@@ -49,3 +50,16 @@ def hash_strings(values: Iterable[str]) -> str:
     for v in values:
         sha.update(v.encode("utf-8"))
     return f"sha256:{sha.hexdigest()}"
+
+
+def hash_source(obj: Any) -> str:
+    """
+    Extract and hash the source code of a function, class, or module.
+    Returns a SHA-256 hash string.
+    """
+    try:
+        source = inspect.getsource(obj)
+        return hashlib.sha256(source.encode("utf-8")).hexdigest()
+    except (OSError, TypeError):
+        # Fallback for built-ins or dynamically generated code
+        return "source_unavailable"

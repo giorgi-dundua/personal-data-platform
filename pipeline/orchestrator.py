@@ -1,16 +1,11 @@
 """
 Pipeline Orchestrator.
 
-This module is the central nervous system of the data platform. It is responsible for:
-1.  Resolving the DAG dependency order (Topological Sort).
-2.  Calculating input hashes for Cache-Aware Execution.
-3.  Invoking stage functions (Nodes).
-4.  Registering output artifacts into the SQLite Registry.
-
-It bridges the gap between the static DAG definition and the dynamic runtime state.
+This module serves as the execution engine for the Personal Data Platform.
+It manages the lifecycle of a pipeline run, including dependency resolution,
+cache-aware execution (idempotency), and artifact registration.
 """
 
-import inspect
 from typing import List
 from pathlib import Path
 from datetime import datetime, timezone
@@ -21,58 +16,56 @@ from pipeline.dag import PIPELINE_DAG
 from pipeline.dag_executor import topo_sort
 from pipeline.registry_sqlite import SQLiteArtifactRegistry
 from pipeline.artifacts import Artifact
-from pipeline.hash_utils import hash_file, hash_strings
+from pipeline.hash_utils import hash_file, hash_strings, hash_source
 
 logger = get_logger("orchestrator")
 
 
 class PipelineOrchestrator:
     """
-    Manages the execution lifecycle of the pipeline.
+    Coordinates the execution of pipeline stages defined in the DAG.
 
     Attributes:
-        registry_path (Path): Location of the SQLite artifact registry.
-        registry (SQLiteArtifactRegistry): Interface to the metadata database.
+        registry_path (Path): Path to the SQLite database for artifact metadata.
+        registry (SQLiteArtifactRegistry): Interface for metadata persistence.
     """
 
     def __init__(self):
-        """Initialize the orchestrator and connect to the artifact registry."""
+        """Initialize the orchestrator and the artifact registry."""
         self.registry_path = config.PROCESSED_DATA_DIR / "registry.db"
-        # Ensure the directory exists before connecting
         self.registry_path.parent.mkdir(parents=True, exist_ok=True)
         self.registry = SQLiteArtifactRegistry(self.registry_path)
 
     @staticmethod
     def get_input_hash(stage_name: str, consumes: List[str]) -> str:
         """
-        Calculate a deterministic hash of all inputs AND code for a specific stage.
+        Calculate a deterministic hash representing the state of a stage's inputs.
 
-        This hash serves as the 'Cache Key'. It combines:
-        1. The Stage Name.
-        2. The Content Hash of input files.
-        3. The Source Code of the function (to invalidate cache on logic changes).
-        4. The Global Configuration state.
+        The hash includes:
+        1. The stage identifier.
+        2. Source code of logic classes/functions (logic_hooks).
+        3. Source code of the node wrapper function.
+        4. Content hashes of all input files/directories.
+        5. The current application configuration state.
 
         Args:
-            stage_name: The name of the stage (e.g., 'normalization').
-            consumes: List of input keys defined in the DAG (e.g., ['raw_data']).
+            stage_name: Name of the stage being hashed.
+            consumes: List of input categories (e.g., 'raw_data').
 
         Returns:
-            str: A SHA-256 hash string representing the input state.
+            str: SHA-256 hash string.
         """
-        # 1. Start with Stage Name
+        node = PIPELINE_DAG[stage_name]
         hashes = [stage_name]
 
-        # 2. Hash the Source Code of the Node Function
-        # If you change the logic in 'normalization_stage', the hash changes.
-        try:
-            node_fn = PIPELINE_DAG[stage_name]["fn"]
-            hashes.append(inspect.getsource(node_fn))
-        except (OSError, TypeError):
-            # Fallback if source cannot be retrieved (e.g., interactive shell)
-            logger.warning(f"Could not hash source code for {stage_name}")
+        # 1. Hash Logic Hooks (Business logic classes/functions)
+        for hook in node.get("logic_hooks", []):
+            hashes.append(hash_source(hook))
 
-        # 3. Resolve input paths based on 'consumes' list
+        # 2. Hash the Node Wrapper Function
+        hashes.append(hash_source(node["fn"]))
+
+        # 3. Hash Input Data
         path_map = {
             "raw_data": [config.raw_gs_path, config.RAW_MI_BAND_DATA_DIR],
             "normalized_data": [config.norm_bp_path, config.norm_hr_path, config.norm_sleep_path],
@@ -80,57 +73,47 @@ class PipelineOrchestrator:
         }
 
         for input_key in consumes:
-            paths = path_map.get(input_key, [])
-            for p in paths:
-                if isinstance(p, Path):
+            for p in path_map.get(input_key, []):
+                if isinstance(p, Path) and p.exists():
                     if p.is_file():
                         hashes.append(hash_file(p))
                     elif p.is_dir():
-                        # Hash all files in directory, sorted by name for determinism
-                        # We only care about CSVs for now
-                        if p.exists():
-                            for sub in sorted(p.glob("*.csv")):
-                                hashes.append(hash_file(sub))
+                        # Sort for deterministic directory hashing
+                        for sub in sorted(p.glob("*.csv")):
+                            hashes.append(hash_file(sub))
 
-        # 4. Hash the configuration state
-        # This ensures that changing a setting (e.g., threshold) invalidates the cache
+        # 4. Hash Global Configuration
         hashes.append(str(config))
 
         return hash_strings(hashes)
 
     def register_output(self, stage_name: str, produces: List[str], input_hash: str, run_id: str) -> None:
         """
-        Register the output files of a successfully completed stage.
+        Register artifacts produced by a stage into the registry.
 
         Args:
             stage_name: Name of the stage that produced the artifacts.
-            produces: List of output keys defined in the DAG.
-            input_hash: The hash of the inputs used to generate these outputs.
-            run_id: Unique identifier for the current pipeline run.
+            produces: List of output categories.
+            input_hash: The input state hash that generated these outputs.
+            run_id: Unique identifier for the current execution.
         """
-        # Map 'produces' keys to actual file paths
         output_map = {
-            "raw_data": [config.raw_gs_path],  # MiBand is a dir, handled separately if needed
+            "raw_data": [config.raw_gs_path],
             "normalized_data": [config.norm_bp_path, config.norm_hr_path, config.norm_sleep_path],
             "validated_data": [config.val_bp_path, config.val_hr_path, config.val_sleep_path],
             "daily_metrics": [config.merged_path]
         }
 
         for prod_key in produces:
-            paths = output_map.get(prod_key, [])
-            for p in paths:
+            for p in output_map.get(prod_key, []):
                 if not p.exists():
-                    logger.warning(f"Stage '{stage_name}' claimed to produce {p}, but it is missing.")
+                    logger.warning(f"Stage '{stage_name}' expected to produce {p}, but file is missing.")
                     continue
 
-                # Create a unique Artifact ID (e.g., 'normalization_bp_hr_normalized')
                 art_id = f"{stage_name}_{p.stem}"
                 content_hash = hash_file(p)
-
-                # Calculate next version based on existing history
                 next_ver = self.registry.next_version(art_id)
 
-                # Construct the Artifact object
                 artifact = Artifact(
                     id=art_id,
                     version=next_ver,
@@ -140,7 +123,7 @@ class PipelineOrchestrator:
                     format=p.suffix.strip('.'),
                     created_by_stage=stage_name,
                     created_by_run=run_id,
-                    inputs=[input_hash],  # Link output to the specific input hash
+                    inputs=[input_hash],
                     metadata={
                         "run_ts": datetime.now(timezone.utc).isoformat(),
                         "file_size_bytes": p.stat().st_size
@@ -148,71 +131,61 @@ class PipelineOrchestrator:
                 )
 
                 self.registry.register(artifact)
-                logger.info(f"Registered artifact: {art_id}:{next_ver} (Hash: {content_hash[:8]}...)")
+                logger.info(f"Registered artifact: {art_id}:{next_ver}")
 
     def run(self, resume: bool = False, skip_ingestion: bool = False) -> None:
         """
-        Execute the pipeline DAG.
+        Execute the pipeline DAG in topological order.
 
         Args:
-            resume: If True, attempts to resume from the last successful state.
-            skip_ingestion: If True, skips the 'ingestion' stage.
+            resume: Placeholder for future resumable state logic.
+            skip_ingestion: If True, bypasses the ingestion stage.
         """
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         logger.info(f"Starting Pipeline Run: {run_id}")
 
-        # 1. Get Execution Order via Topological Sort
         try:
             order = topo_sort(PIPELINE_DAG)
             logger.info(f"Execution Order: {' -> '.join(order)}")
         except Exception as e:
-            logger.critical(f"DAG Error: {e}")
+            logger.critical(f"DAG Resolution Error: {e}")
             return
 
-        # 2. Execute Stages
         for stage_name in order:
-            # --- Skip Logic ---
             if skip_ingestion and stage_name == "ingestion":
-                logger.info("Skipping ingestion stage as requested via CLI.")
+                logger.info("Skipping ingestion stage as requested.")
                 continue
 
             node = PIPELINE_DAG[stage_name]
             logger.info(f"--- Stage: {stage_name} ---")
 
-            # A. Calculate Input Hash (The "Cache Key")
+            # 1. Idempotency Check (Cache Lookup)
             input_hash = self.get_input_hash(stage_name, node["consumes"])
-
-            # B. Check Cache (Future Implementation)
             cached_artifact = self.registry.get_by_input_hash(input_hash)
 
             if cached_artifact:
-                # Critical Safety Check: Does the output file actually exist on disk?
-                # If we skip running, but the file was deleted, downstream stages will crash.
                 if cached_artifact.path.exists():
-                    logger.info(
-                        f"✅ Cache Hit for {stage_name}. Skipping execution. (Artifact: {cached_artifact.version})")
+                    logger.info(f"✅ Cache Hit for {stage_name}. Skipping. (Artifact: {cached_artifact.version})")
                     continue
                 else:
-                    logger.warning(
-                        f"⚠️ Cache Hit for {stage_name}, but file {cached_artifact.path} is missing. Re-running.")
+                    logger.warning(f"⚠️ Cache Hit for {stage_name}, but file {cached_artifact.path} is missing. Re-running.")
 
-            # C. Run Node
+            # 2. Execution
             try:
-                # Execute the function from nodes.py
                 result = node["fn"]()
                 logger.info(f"Stage '{stage_name}' completed. Result: {result}")
 
-                # D. Register Outputs
+                # 3. Registration
                 self.register_output(stage_name, node["produces"], input_hash, run_id)
 
             except Exception as e:
                 logger.error(f"Stage '{stage_name}' failed: {e}", exc_info=True)
                 if not resume:
-                    logger.error("Pipeline aborted due to failure.")
+                    logger.error("Pipeline aborted.")
                     break
 
 
 def run_pipeline(resume: bool = False, skip_ingestion: bool = False):
-    """Entry point for the CLI."""
+    """Entry point for pipeline execution."""
     orch = PipelineOrchestrator()
     orch.run(resume=resume, skip_ingestion=skip_ingestion)

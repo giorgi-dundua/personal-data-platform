@@ -48,3 +48,7 @@ data/
 docs/
 .cursor
 digest.txt
+*.egg-info
+*.egg-info/
+**/*.egg-info
+**/*.egg-info/

@@ -80,11 +80,14 @@ class AppConfig:
     # --- Google Sheets ---
     GOOGLE_SHEETS_KEY: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 
-    if not GOOGLE_SHEETS_KEY:
-        raise RuntimeError(
-            "Environment variable GOOGLE_APPLICATION_CREDENTIALS is not set. "
-            "Set it in your .env or system environment."
-        )
+    def __post_init__(self):
+        """Validate critical paths after initialization."""
+        if not self.GOOGLE_SHEETS_KEY:
+            raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS not set in .env")
+
+        key_path = Path(self.GOOGLE_SHEETS_KEY)
+        if not key_path.exists():
+            raise FileNotFoundError(f"Service account key not found at: {key_path.absolute()}")
 
     GOOGLE_SHEETS_BP_ID: str = os.getenv("GOOGLE_SHEETS_BP_ID", "")
     GOOGLE_SHEETS_HR_ID: str = os.getenv("GOOGLE_SHEETS_HR_ID", "")
