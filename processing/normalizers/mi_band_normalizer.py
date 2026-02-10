@@ -1,5 +1,8 @@
-import pandas as pd
+import uuid
 import json
+import pandas as pd
+from pathlib import Path
+from typing import List, Tuple
 from config.settings import config
 from config.logging import get_logger
 
@@ -9,7 +12,6 @@ logger = get_logger("MiBandNormalizer")
 class MiBandNormalizer:
     """
     Normalize Mi Band raw CSVs into daily HR and sleep metrics.
-    Uses centralized paths from config.
     """
 
     def __init__(self):
@@ -21,7 +23,6 @@ class MiBandNormalizer:
         if not files:
             raise FileNotFoundError(f"No raw Mi Band CSVs found in {self.raw_dir}")
 
-        # Professional tip: ignore_index and sort=False for faster concatenation
         dfs = [pd.read_csv(f) for f in files]
         logger.info(f"Loaded {len(files)} raw CSVs")
         return pd.concat(dfs, ignore_index=True, sort=False)
@@ -52,7 +53,6 @@ class MiBandNormalizer:
             has_data=('has_data', 'any')
         ).reset_index()
 
-        # Filter valid sleep nights (e.g., > 4 hours)
         return sleep_daily[sleep_daily['total_duration'] >= 240].copy()
 
     def normalize_hr(self, raw_df: pd.DataFrame) -> pd.DataFrame:
@@ -75,19 +75,22 @@ class MiBandNormalizer:
             has_data=('avg_hr', 'any')
         ).reset_index()
 
-    def run(self):
+    def run(self) -> Tuple[pd.DataFrame, pd.DataFrame, List[Path]]:
+        """Returns: (SleepDF, HRDF, [SleepTempPath, HRTempPath])"""
         raw_df = self.load_raw_files()
-
         sleep_daily = self.normalize_sleep(raw_df)
         hr_daily = self.normalize_hr(raw_df)
 
-        # Write using properties from config registry
+        # --- Atomic Write ---
+        unique_id = uuid.uuid4().hex[:4]
+        sleep_tmp = config.norm_sleep_path.with_suffix(f".csv.{unique_id}.tmp")
+        hr_tmp = config.norm_hr_path.with_suffix(f".csv.{unique_id}.tmp")
+
         self.output_dir.mkdir(parents=True, exist_ok=True)
+        sleep_daily.to_csv(sleep_tmp, index=False)
+        hr_daily.to_csv(hr_tmp, index=False)
 
-        sleep_daily.to_csv(config.norm_sleep_path, index=False)
-        hr_daily.to_csv(config.norm_hr_path, index=False)
+        logger.info(f"Sleep metrics -> {sleep_tmp.name}")
+        logger.info(f"HR metrics -> {hr_tmp.name}")
 
-        logger.info(f"Sleep metrics -> {config.norm_sleep_path}")
-        logger.info(f"HR metrics -> {config.norm_hr_path}")
-
-        return sleep_daily, hr_daily
+        return sleep_daily, hr_daily, [sleep_tmp, hr_tmp]

@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, List
+from pathlib import Path
+
 
 class DataSource(ABC):
     """
@@ -8,6 +10,7 @@ class DataSource(ABC):
 
     @abstractmethod
     def connect(self) -> None:
+        """Establish connection to the external source."""
         pass
 
     @abstractmethod
@@ -17,10 +20,15 @@ class DataSource(ABC):
 
     @abstractmethod
     def normalize(self, raw_data: Any) -> Any:
-        """Normalize raw data into canonical schema."""
+        """Normalize raw data into canonical schema (optional)."""
         pass
 
     @abstractmethod
-    def store(self, normalized_data: Any) -> None:
-        """Store normalized or raw data snapshot."""
+    def store(self, normalized_data: Any) -> List[Path]:
+        """
+        Store data to disk using atomic temporary files.
+
+        Returns:
+            List[Path]: A list of paths to the temporary files created.
+        """
         pass

@@ -1,9 +1,9 @@
 import logging
 import sys
 from datetime import datetime
-from config.settings import config, BASE_DIR
+from config.settings import config
 
-LOG_DIR = BASE_DIR / "logs"
+LOG_DIR = config.BASE_DIR / "logs"
 LOG_DIR.mkdir(exist_ok=True)
 
 LOG_FILE = LOG_DIR / f"{config.ENV}_{datetime.now().strftime('%Y-%m-%d')}.log"

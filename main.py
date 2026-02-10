@@ -14,6 +14,8 @@ logger = get_logger("bootstrap")
 def parse_args() -> argparse.Namespace:
     """Parse CLI arguments for the pipeline."""
     parser = argparse.ArgumentParser(description="Run Personal Data Platform Pipeline")
+
+    # Cleanup Arguments
     parser.add_argument(
         "--clean",
         action="store_true",
@@ -29,38 +31,42 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Preview which files would be deleted without actually removing them",
     )
-    parser.add_argument(
-        "--skip-ingestion",
-        action="store_true",
-        help="Skip downloading new data and use existing local raw files",
-    )
 
+    # Execution Control Arguments
     parser.add_argument(
         "--resume",
         action="store_true",
         help="Resume pipeline from last successful stage using pipeline_state.json",
     )
+    parser.add_argument(
+        "--start-stage",
+        type=str,
+        choices=["ingestion", "normalization", "validation", "merge"],
+        help="Explicitly start the pipeline from this stage (skips previous stages)",
+    )
+
     return parser.parse_args()
 
 def main():
     """Main execution block."""
     args = parse_args()
 
-    # Trigger cleanup if either --clean or --dry-run is present
+    # 1. Handle Cleanup
     if args.clean or args.dry_run:
         logger.info("Cleanup/Dry-run process initiated...")
-        # We include raw files if --raw is used OR if we are just doing a --dry-run preview
         include_raw = args.raw or args.dry_run
         clean_project_data(dry_run=args.dry_run, include_raw=include_raw)
 
-    # Do not run the pipeline if we are only doing a dry run
     if args.dry_run:
         logger.info("Dry run complete. Pipeline execution skipped.")
         return
 
+    # 2. Trigger Pipeline
     try:
-        # Pass the skip_ingestion flag to the orchestrator
-        run_pipeline(resume=args.resume, skip_ingestion=args.skip_ingestion)
+        run_pipeline(
+            resume=args.resume,
+            start_stage=args.start_stage
+        )
     except Exception as e:
         logger.critical(f"Pipeline crashed: {e}", exc_info=True)
 

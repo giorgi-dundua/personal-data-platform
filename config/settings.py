@@ -6,8 +6,6 @@ from dotenv import load_dotenv
 # Load environment variables from .env if present
 load_dotenv()
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-
 @dataclass
 class AppConfig:
     # --- Core ---
@@ -15,6 +13,7 @@ class AppConfig:
     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
 
     # --- Paths ---
+    BASE_DIR = Path(__file__).resolve().parent.parent
     DATA_DIR: Path = BASE_DIR / "data"
     RAW_DATA_DIR: Path = DATA_DIR / "raw"
     RAW_MI_BAND_DATA_DIR: Path = RAW_DATA_DIR / "mi_band"
@@ -79,6 +78,7 @@ class AppConfig:
 
     # --- Google Sheets ---
     GOOGLE_SHEETS_KEY: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+    GOOGLE_SHEET_NAME: str = os.getenv("GOOGLE_SHEET_NAME", "ADHD BP & HR")
 
     def __post_init__(self):
         """Validate critical paths after initialization."""
