@@ -121,7 +121,6 @@ personal-data-platform/
 * Guard Clauses: Enforcing "Identity > Status" in execution logic.
 
 ## 🔜 Roadmap
-## 🔜 Roadmap
 
 - [x] DAG Topological Sort  
 - [x] SQLite Artifact Registry  
