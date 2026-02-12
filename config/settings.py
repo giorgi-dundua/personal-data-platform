@@ -73,7 +73,7 @@ class AppConfig:
     # --- Google API Scopes ---
     GOOGLE_API_SCOPES = [
         "https://www.googleapis.com/auth/spreadsheets.readonly",
-        "https://www.googleapis.com/auth/drive.readonly",
+        "https://www.googleapis.com/auth/drive",
     ]
 
     # --- Google Sheets ---
@@ -92,8 +92,9 @@ class AppConfig:
     GOOGLE_SHEETS_BP_ID: str = os.getenv("GOOGLE_SHEETS_BP_ID", "")
     GOOGLE_SHEETS_HR_ID: str = os.getenv("GOOGLE_SHEETS_HR_ID", "")
 
-    # --- Mi Band Google Drive ---
+    # --- Google Drive Mi Band and state folder ---
     MI_BAND_DRIVE_FOLDER_ID: str = os.getenv("MI_BAND_DRIVE_FOLDER_ID", "")
+    GOOGLE_DRIVE_STATE_FOLDER_ID: str = os.getenv("GOOGLE_DRIVE_STATE_FOLDER_ID", "")
 
     # --- Medication tracking ---
     MED_START_DATE: str = os.getenv("MED_START_DATE", "2025-12-08")
