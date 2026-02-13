@@ -70,11 +70,6 @@ def load_data(show_real: bool):
 def add_crosshair(base, main_layers, point_charts=None):
     """
     Adds a magnetic crosshair and hover dots to a chart.
-    
-    Args:
-        base: The base chart with data and X-axis encoding.
-        main_layers: The main visual elements (lines, bars, rules) already layered.
-        point_charts: A LIST of specific charts (e.g. sys_line) to add hover dots to.
     """
     # 1. The Selector (Invisible, tracks mouse)
     nearest = alt.selection_point(nearest=True, on='mouseover', fields=['date'], empty=False)
@@ -82,11 +77,15 @@ def add_crosshair(base, main_layers, point_charts=None):
     selectors = alt.Chart(base.data).mark_point().encode(
         x='date:T',
         opacity=alt.value(0),
+        # FIX: Disable tooltip on the selector so it doesn't block the real data
+        tooltip=alt.value(None) 
     ).add_params(nearest)
 
     # 2. The Vertical Rule (Gray line)
     rule = alt.Chart(base.data).mark_rule(color='gray').encode(
         x='date:T',
+        # Optional: Show date on the rule itself if no points are hovered
+        tooltip=[alt.Tooltip('date', format='%Y-%m-%d')]
     ).transform_filter(nearest)
 
     # 3. The Hover Dots (Specific to each line)
@@ -94,12 +93,13 @@ def add_crosshair(base, main_layers, point_charts=None):
     if point_charts:
         for chart in point_charts:
             # We clone the chart but change mark to circle and set opacity logic
+            # The tooltip encoding is inherited from the original 'chart'
             pt = chart.mark_circle(size=60).encode(
                 opacity=alt.condition(nearest, alt.value(1), alt.value(0))
             )
             points_layers.append(pt)
 
-    # 4. Combine: [Main Content] + [Selectors] + [Rule] + [Dots]
+    # 4. Combine
     return alt.layer(main_layers, selectors, rule, *points_layers).interactive()
 
 # --- Main Application ---
