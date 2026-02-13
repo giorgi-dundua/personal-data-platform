@@ -15,7 +15,10 @@ dependencies = [
     "google-auth>=2.20.0",
     "google-api-python-client>=2.90.0",
     "python-dotenv>=1.0.0",
-    "tabulate>=0.9.0"
+    "tabulate>=0.9.0",
+    "streamlit>=1.30.0",
+    "numpy>=1.24.0",
+    "altair>=5.0.0"
 ]
 
 [project.optional-dependencies]
