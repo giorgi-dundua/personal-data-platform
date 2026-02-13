@@ -84,7 +84,7 @@ class AppConfig:
         """Validate critical paths and handle Base64 secrets."""
         
         # 1. Handle Base64 Secret (Cloud Deployment)
-        # If we have the Base64 string but no file, create the file.
+        # If Base64 string but no file, create the file.
         b64_key = os.getenv("GOOGLE_CREDENTIALS_BASE64")
         if b64_key and not os.path.exists(self.GOOGLE_SHEETS_KEY):
             try:

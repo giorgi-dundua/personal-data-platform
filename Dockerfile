@@ -49,6 +49,11 @@ COPY processing/ processing/
 COPY scripts/ scripts/
 COPY main.py .
 COPY dashboard.py .
+COPY entrypoint.sh .
+
+# Fix permissions and line endings inside the image
+RUN chmod +x entrypoint.sh && \
+    sed -i 's/\r$//' entrypoint.sh
 
 # Create writable data dirs and secret mount point
 # Pre-create .secrets to control ownership for volume mounts
@@ -63,10 +68,13 @@ RUN mkdir -p data/raw/google_sheets \
 # Switch to non-root user
 USER pipeline_user
 
-# Generate Mock Data (Build-Time)
-# Set SKIP_VALIDATION=true so settings.py doesn't crash on missing secrets
-# Ensures the CSV exists inside the image even though data/ is ignored
+# Generate Mock Data
+# Set SKIP_VALIDATION=true because build-time has no secrets
 RUN SKIP_VALIDATION=true python -m scripts.generate_mock_data
 
-# Default command
-CMD ["python", "main.py", "--help"]
+# Set the Entrypoint
+# This tells Docker: "Always run this script first"
+ENTRYPOINT ["./entrypoint.sh"]
+
+# Default command (Passed to the entrypoint)
+CMD ["streamlit", "run", "dashboard.py", "--server.port=8501", "--server.address=0.0.0.0"]

@@ -1,4 +1,6 @@
 # Personal Data Platform (PDP)
+![Deployment](https://img.shields.io/badge/Deploy-Fly.io-purple)
+![Docker](https://img.shields.io/badge/Container-Docker-blue)
 ![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
 ![Architecture](https://img.shields.io/badge/Architecture-DAG-orange)
 ![Database](https://img.shields.io/badge/Registry-SQLite-green)
@@ -62,6 +64,16 @@ Metadata is treated as a first-class citizen. A SQLite backend tracks:
 * **Lineage:** Which inputs produced which outputs.
 * **Versioning:** Automatic v1, v2 incrementing.
 * **Audit:** Execution timestamps and row counts.
+### 4. Dual-Mode Visualization
+The Streamlit dashboard implements a **Hybrid Auth** pattern:
+*   **Public View:** Automatically loads synthetic data (Mock Mode) for demonstration purposes, ensuring zero-click value for visitors.
+*   **Private View:** An authenticated sidebar login unlocks the real telemetry data (decrypted from cloud secrets) for the owner.
+*   **UX:** Features Altair charts with magnetic crosshairs, dynamic date filtering, and physiological threshold markers.
+
+### 5. Cloud State Sync (Stateless Compute)
+To support ephemeral environments (Docker/GitHub Actions), the pipeline implements a **Remote State** architecture.
+*   **Pull:** On startup, `entrypoint.sh` downloads the SQLite Registry and Merged Metrics from a secure Google Drive folder.
+*   **Push:** After execution, updated state is atomically uploaded back to Drive.
 
 ## 🛠️ Setup & Usage
 ### Prerequisites
@@ -97,6 +109,13 @@ python main.py --start-stage validation
 
 # Clean up all generated artifacts (Dry Run)
 python main.py --clean --dry-run
+
+# Run Dashboard (Auto-switches based on env vars)
+streamlit run dashboard.py
+
+# Run via Docker (Stateless)
+docker build -t pdp .
+docker run --rm --env-file .env -v $(pwd)/.secrets:/app/.secrets pdp
 ```
 ## 📂 Project Structure
 ```text
@@ -106,10 +125,13 @@ personal-data-platform/
 ├── pipeline/           # Core Engine
 │   ├── orchestrator.py # DAG execution & Caching logic
 │   ├── registry_sqlite.py # Repository Pattern for Metadata
-│   ├── dag.py          # Dependency Graph definition
 │   └── nodes.py        # Stage wrappers
 ├── processing/         # Business Logic (Normalizers/Validators)
-├── scripts/            # Utility scripts (Cleanup, Inspection)
+├── scripts/            # Utility scripts (Sync, Mock Data)
+├── dashboard.py        # Streamlit Visualization Layer
+├── Dockerfile          # Multi-stage build definition
+├── fly.toml            # Cloud deployment config
+├── entrypoint.sh       # Cloud state synchronization logic
 └── main.py             # CLI Entrypoint
 ```
 
@@ -122,10 +144,10 @@ personal-data-platform/
 
 ## 🔜 Roadmap
 
-- [x] DAG Topological Sort  
-- [x] SQLite Artifact Registry  
-- [x] Atomic File Operations  
-
-- [ ] Unit Tests for DAG Logic  
-- [ ] Visualization Layer (Streamlit/Dash)  
-- [ ] Docker Containerization
+- [x] DAG Topological Sort
+- [x] SQLite Artifact Registry
+- [x] Atomic File Operations
+- [x] Visualization Layer (Streamlit/Altair)
+- [x] Docker Containerization & Cloud Sync
+- [x] CI/CD (GitHub Actions -> Fly.io)
+- [ ] Unit Tests for DAG Logic
