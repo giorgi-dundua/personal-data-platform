@@ -81,10 +81,35 @@ class AppConfig:
     GOOGLE_SHEET_NAME: str = os.getenv("GOOGLE_SHEET_NAME", "ADHD BP & HR")
 
     def __post_init__(self):
-        """Validate critical paths after initialization."""
+        """Validate critical paths and handle Base64 secrets."""
+        
+        # 1. Handle Base64 Secret (Cloud Deployment)
+        # If we have the Base64 string but no file, create the file.
+        b64_key = os.getenv("GOOGLE_CREDENTIALS_BASE64")
+        if b64_key and not os.path.exists(self.GOOGLE_SHEETS_KEY):
+            try:
+                # Create .secrets directory if it doesn't exist
+                secret_dir = Path(self.GOOGLE_SHEETS_KEY).parent
+                secret_dir.mkdir(parents=True, exist_ok=True)
+                
+                # Decode and write
+                with open(self.GOOGLE_SHEETS_KEY, "wb") as f:
+                    f.write(base64.b64decode(b64_key))
+            except Exception as e:
+                print(f"Failed to decode base64 credentials: {e}")
+
+        # 2. Build-Time Bypass
+        if os.getenv("SKIP_VALIDATION", "false").lower() == "true":
+            return
+
+        # 3. Demo Mode Bypass
+        if os.getenv("DEMO_MODE", "false").lower() == "true":
+            return
+
+        # 4. Standard Validation
         if not self.GOOGLE_SHEETS_KEY:
             raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS not set in .env")
-
+        
         key_path = Path(self.GOOGLE_SHEETS_KEY)
         if not key_path.exists():
             raise FileNotFoundError(f"Service account key not found at: {key_path.absolute()}")

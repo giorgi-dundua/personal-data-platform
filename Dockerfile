@@ -48,6 +48,7 @@ COPY pipeline/ pipeline/
 COPY processing/ processing/
 COPY scripts/ scripts/
 COPY main.py .
+COPY dashboard.py .
 
 # Create writable data dirs and secret mount point
 # Pre-create .secrets to control ownership for volume mounts
@@ -61,6 +62,11 @@ RUN mkdir -p data/raw/google_sheets \
 
 # Switch to non-root user
 USER pipeline_user
+
+# Generate Mock Data (Build-Time)
+# Set SKIP_VALIDATION=true so settings.py doesn't crash on missing secrets
+# Ensures the CSV exists inside the image even though data/ is ignored
+RUN SKIP_VALIDATION=true python -m scripts.generate_mock_data
 
 # Default command
 CMD ["python", "main.py", "--help"]
