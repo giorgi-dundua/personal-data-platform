@@ -1,0 +1,55 @@
+name: Weekly Pipeline Run
+
+on:
+  schedule:
+    # Run at 18:00 UTC every Friday
+    - cron: '0 18 * * 5'
+  # Allow manual trigger for testing
+  workflow_dispatch:
+
+jobs:
+  run-pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Dependencies
+        run: pip install -e .
+
+      - name: Create Secrets File
+        run: |
+          mkdir -p .secrets
+          echo "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > .secrets/personal-data-platform.json
+
+      - name: Pull Remote State
+        run: python -m scripts.sync_state pull
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
+          GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
+          # We need this to decrypt the key, but we also need the key path env var above
+          GOOGLE_CREDENTIALS_BASE64: ${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}
+
+      - name: Run Pipeline
+        run: python main.py
+        env:
+          ENV: prod
+          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
+          GOOGLE_SHEET_NAME: "ADHD BP & HR"
+          MI_BAND_DRIVE_FOLDER_ID: ${{ secrets.MI_BAND_DRIVE_FOLDER_ID }}
+          # Toggles
+          INGESTION_ENABLED: true
+          VALIDATION_ENABLED: true
+          PROCESSING_ENABLED: true
+
+      - name: Push Updated State
+        if: success()
+        run: python -m scripts.sync_state push
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
+          GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}

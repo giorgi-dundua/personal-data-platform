@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-from pydantic import BaseModel, Field, field_validator, ConfigDict
+from pydantic import BaseModel, Field, field_validator, field_serializer, ConfigDict
 
 class Artifact(BaseModel):
     """
@@ -24,14 +24,19 @@ class Artifact(BaseModel):
 
     # Pydantic V2 Configuration
     model_config = ConfigDict(
-        populate_by_name=True,
-        json_encoders={Path: str}
+        populate_by_name=True
+        # json_encoders removed here because we use @field_serializer below
     )
 
+    # INPUT: Convert string to Path when creating the object
     @field_validator("path", mode="before")
     @classmethod
     def convert_path(cls, v: Any) -> Path:
-        """Ensure path is always a Path object, even if a string is passed."""
         if isinstance(v, str):
             return Path(v)
         return v
+
+    # OUTPUT: Convert Path to string when dumping to JSON
+    @field_serializer("path")
+    def serialize_path(self, path: Path, _info):
+        return str(path)
