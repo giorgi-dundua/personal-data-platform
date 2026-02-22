@@ -25,7 +25,13 @@ jobs:
       - name: Create Secrets File
         run: |
           mkdir -p .secrets
-          echo "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -d > .secrets/personal-data-platform.json
+          echo "${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}" | base64 -di > .secrets/personal-data-platform.json
+
+          # Check if the file is valid JSON and not empty
+          if [ ! -s .secrets/personal-data-platform.json ]; then
+            echo "Error: Decoded credentials file is empty!"
+            exit 1
+          fi
 
       - name: Pull Remote State
         run: python -m scripts.sync_state pull
