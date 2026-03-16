@@ -12,6 +12,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
+      GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
+      GOOGLE_SHEETS_BP_ID: ${{ secrets.GOOGLE_SHEETS_BP_ID }}
+      MI_BAND_DRIVE_FOLDER_ID: ${{ secrets.MI_BAND_DRIVE_FOLDER_ID }}
+      GOOGLE_CREDENTIALS_BASE64: ${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -36,19 +41,12 @@ jobs:
           fi
 
       - name: Pull Remote State
-        run: python -m scripts.sync_state pull
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
-          GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
-          GOOGLE_CREDENTIALS_BASE64: ${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}
+        run: python -m scripts.sync_state pull        
 
       - name: Run Pipeline
         run: python main.py
         env:
-          ENV: prod
-          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
-          GOOGLE_SHEETS_BP_ID: ${{ secrets.GOOGLE_SHEETS_BP_ID }}
-          MI_BAND_DRIVE_FOLDER_ID: ${{ secrets.MI_BAND_DRIVE_FOLDER_ID }}
+          ENV: prod      
           # Toggles
           INGESTION_ENABLED: true
           VALIDATION_ENABLED: true
@@ -57,9 +55,6 @@ jobs:
       - name: Push Updated State
         if: success()
         run: python -m scripts.sync_state push
-        env:
-          GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
-          GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
 
       - name: Setup Flyctl
         if: success()
