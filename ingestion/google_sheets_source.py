@@ -44,7 +44,7 @@ class GoogleSheetsSource(DataSource):
 
     def fetch(self) -> pd.DataFrame:
         """Fetch all records from the sheet."""
-        logger.info(f"Fetching data from {self.sheet_name}")
+        logger.info(f"Fetching data from {self.sheet_id}")
         data = self.ws.get_all_records()
         df = pd.DataFrame(data)
         logger.info(f"Fetched {len(df)} rows")

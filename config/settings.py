@@ -117,9 +117,6 @@ class AppConfig:
         if not key_path.exists():
             raise FileNotFoundError(f"Service account key not found at: {key_path.absolute()}")
 
-    GOOGLE_SHEETS_BP_ID: str = os.getenv("GOOGLE_SHEETS_BP_ID", "")
-    GOOGLE_SHEETS_HR_ID: str = os.getenv("GOOGLE_SHEETS_HR_ID", "")
-
     # --- Google Drive Mi Band and state folder ---
     MI_BAND_DRIVE_FOLDER_ID: str = os.getenv("MI_BAND_DRIVE_FOLDER_ID", "")
     GOOGLE_DRIVE_STATE_FOLDER_ID: str = os.getenv("GOOGLE_DRIVE_STATE_FOLDER_ID", "")
