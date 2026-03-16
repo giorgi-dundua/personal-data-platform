@@ -40,7 +40,7 @@ def render_sidebar_auth():
     return False
 
 # --- Data Loading ---
-@st.cache_data
+@st.cache_data(ttl=3600)
 def load_data(show_real: bool):
     """Load data and apply hard cutoff for usability."""
     real_path = config.merged_path
@@ -65,12 +65,6 @@ def load_data(show_real: bool):
         df["sleep_hours"] = (df["total_duration"] / 60).round(1)
 
     return df, source_type
-
-# --- TTL to prevent infinite memory caching ---
-@st.cache_data(ttl=3600)
-def load_data(show_real: bool):
-    """Load data and apply hard cutoff for usability."""
-    real_path = config.merged_path
 
 # --- Visualization Helper ---
 def add_crosshair(base, main_layers, point_charts=None):
