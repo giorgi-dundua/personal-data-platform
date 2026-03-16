@@ -10,6 +10,8 @@ on:
 jobs:
   run-pipeline:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
       - uses: actions/checkout@v4
 
@@ -38,7 +40,6 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
           GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
-          # We need this to decrypt the key, but we also need the key path env var above
           GOOGLE_CREDENTIALS_BASE64: ${{ secrets.GOOGLE_CREDENTIALS_BASE64 }}
 
       - name: Run Pipeline
@@ -46,7 +47,7 @@ jobs:
         env:
           ENV: prod
           GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
-          GOOGLE_SHEET_NAME: "ADHD BP & HR"
+          GOOGLE_SHEETS_BP_ID: ${{ secrets.GOOGLE_SHEETS_BP_ID }}
           MI_BAND_DRIVE_FOLDER_ID: ${{ secrets.MI_BAND_DRIVE_FOLDER_ID }}
           # Toggles
           INGESTION_ENABLED: true
@@ -59,3 +60,13 @@ jobs:
         env:
           GOOGLE_APPLICATION_CREDENTIALS: .secrets/personal-data-platform.json
           GOOGLE_DRIVE_STATE_FOLDER_ID: ${{ secrets.GOOGLE_DRIVE_STATE_FOLDER_ID }}
+
+      - name: Setup Flyctl
+        if: success()
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - name: Invalidate Dashboard Cache (Restart Fly.io)
+        if: success()
+        run: flyctl apps restart pdp-dashboard-giorgi
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

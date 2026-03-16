@@ -17,23 +17,27 @@ class GoogleSheetsSource(DataSource):
         """
         Initialize with sheet name. Defaults to config.GOOGLE_SHEET_NAME.
         """
-        self.sheet_name = sheet_name or config.GOOGLE_SHEET_NAME
+        self.sheet_id = config.GOOGLE_SHEETS_BP_ID
         self.csv_path = config.raw_gs_path
         self.gc = None
         self.ws = None
 
     def connect(self) -> None:
         """Authorize and connect to Google Sheets."""
-        logger.info(f"Connecting to Google Sheet: {self.sheet_name}")
+        logger.info(f"Connecting to Google Sheet ID: {self.sheet_id}")
         try:
             creds = Credentials.from_service_account_file(
                 config.GOOGLE_SHEETS_KEY,
                 scopes=config.GOOGLE_API_SCOPES
             )
+
+            # Log the active identity to prove who is executing
+            logger.info(f"Authenticated as: {creds.service_account_email}")
+
             self.gc = gspread.authorize(creds)
-            sh = self.gc.open(self.sheet_name)
+            sh = self.gc.open_by_key(self.sheet_id)
             self.ws = sh.sheet1
-            logger.info("Connected successfully")
+            logger.info(f"Connected to sheet: {sh.title}")
         except Exception as e:
             logger.error(f"Failed to connect to Google Sheets: {e}")
             raise

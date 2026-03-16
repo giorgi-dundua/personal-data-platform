@@ -78,7 +78,7 @@ class AppConfig:
 
     # --- Google Sheets ---
     GOOGLE_SHEETS_KEY: str = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
-    GOOGLE_SHEET_NAME: str = os.getenv("GOOGLE_SHEET_NAME", "ADHD BP & HR")
+    GOOGLE_SHEETS_BP_ID: str = os.getenv("GOOGLE_SHEETS_BP_ID", "")
 
     def __post_init__(self):
         """Validate critical paths and handle Base64 secrets."""
@@ -109,6 +109,9 @@ class AppConfig:
         # 4. Standard Validation
         if not self.GOOGLE_SHEETS_KEY:
             raise RuntimeError("GOOGLE_APPLICATION_CREDENTIALS not set in .env")
+        
+        if not self.GOOGLE_SHEETS_BP_ID:
+            raise RuntimeError("GOOGLE_SHEETS_BP_ID not set in environment")
         
         key_path = Path(self.GOOGLE_SHEETS_KEY)
         if not key_path.exists():
