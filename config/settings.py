@@ -40,7 +40,7 @@ class AppConfig:
     FN_VAL_HR: str = "validated_hr_daily.csv"
     FN_VAL_SLEEP: str = "validated_sleep_daily.csv"
 
-    # --- Validation Config (Fixed using default_factory) ---
+    # --- Validation Config ---
     COLUMNS_BP: list[str] = field(default_factory=lambda: ["datetime", "systolic", "diastolic", "pulse"])
     COLUMNS_HR: list[str] = field(default_factory=lambda: ["date_only", "avg_hr", "min_hr", "max_hr"])
     COLUMNS_SLEEP: list[str] = field(default_factory=lambda: ["date_only", "total_duration", "sleep_score"])

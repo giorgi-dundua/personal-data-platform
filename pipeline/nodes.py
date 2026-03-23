@@ -21,7 +21,7 @@ def ingestion_stage() -> Dict[str, Any]:
         GoogleSheetsSource(),
         MiBandDriveSource(),
     ]
-    # Runner now returns List[Path]
+    # returns List[Path]
     paths = IngestionRunner(sources).run()
 
     return {

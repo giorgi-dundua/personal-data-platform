@@ -41,7 +41,7 @@ def ingestion_gate() -> bool:
     return require_files(
         stage="normalization",
         paths=[
-            config.raw_gs_path,  # Fixed: matches settings.py property
+            config.raw_gs_path,
             config.RAW_MI_BAND_DATA_DIR,
         ],
     )

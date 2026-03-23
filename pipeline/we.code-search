@@ -1,0 +1,70 @@
+# Query: we
+# ContextLines: 1
+
+17 results - 10 files
+
+README.md:
+  153  - [x] Docker Containerization & Cloud State Sync
+  154: - [x] CI/CD (GitHub Actions → Fly.io, scheduled weekly pipeline run)
+  155  - [x] Unit Tests (DAG executor, SQLite registry)
+
+.github/workflows/scheduled_run.yml:
+  1: name: Weekly Pipeline Run
+  2  
+
+config/settings.py:
+   12      ENV: str = os.getenv("ENV", "dev")  # dev | prod
+   13:     DEBUG: bool = os.getenv("DEBUG", "true").lower() == "true"
+   14  
+
+  101          # 2. Build-Time Bypass
+  102:         if os.getenv("SKIP_VALIDATION", "false").lower() == "true":
+  103              return
+
+  105          # 3. Demo Mode Bypass
+  106:         if os.getenv("DEMO_MODE", "false").lower() == "true":
+  107              return
+
+  127      # --- Pipeline toggles ---
+  128:     INGESTION_ENABLED: bool = os.getenv("INGESTION_ENABLED", "true").lower() == "true"
+  129:     VALIDATION_ENABLED: bool = os.getenv("VALIDATION_ENABLED", "true").lower() == "true"
+  130:     PROCESSING_ENABLED: bool = os.getenv("PROCESSING_ENABLED", "true").lower() == "true"
+  131  
+
+pipeline/dag_executor.py:
+  22          KeyError: If a dependency name is missing from the DAG.
+  23:         RecursionError: If there is a cycle in the DAG (not allowed).
+  24      """
+
+pipeline/gates.py:
+  1: """Pipeline gates to ensure data integrity between stages.
+  2  
+  3  Gates act as preconditions for DAG nodes. They verify the presence of
+  4: expected input files before a stage is allowed to run, preventing
+  5  downstream failures caused by missing artifacts.
+
+pipeline/registry_sqlite.py:
+  147          """
+  148:         # Store inputs as a JSON list: ["hash_value"]
+  149:         # Use the LIKE operator to find the hash inside that JSON string.
+  150          query = "SELECT * FROM artifacts WHERE inputs LIKE ? ORDER BY created_at DESC LIMIT 1"
+
+processing/normalizers/google_sheets_normalizer.py:
+  31          # --- Clean column names ---
+  32:         df.columns = df.columns.str.strip().str.lower()
+  33  
+
+scripts/generate_mock_data.py:
+  45      # 3. Save to processed folder (Mock Artifact)
+  46:     # Save it alongside the real data but with a distinct name
+  47      output_path = config.MERGED_DATA_DIR / "mock_daily_metrics.csv"
+
+scripts/sync_state.py:
+  16  # Files to sync
+  17: # Sync the Registry (Metadata) and the Merged Output (The final dataset)
+  18  SYNC_TARGETS = [
+
+tests/test_dag.py:
+  23      order = topo_sort(dag)
+  24:     # A must be first, D must be last. B and C can be in any order in between.
+  25      assert order[0] == "A"

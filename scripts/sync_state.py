@@ -14,7 +14,7 @@ setup_logging()
 logger = get_logger("sync_state")
 
 # Files to sync
-# We sync the Registry (Metadata) and the Merged Output (The final dataset)
+# Sync the Registry (Metadata) and the Merged Output (The final dataset)
 SYNC_TARGETS = [
     config.PROCESSED_DATA_DIR / "registry.db",
     config.merged_path

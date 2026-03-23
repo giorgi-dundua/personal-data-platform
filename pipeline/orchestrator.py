@@ -76,7 +76,7 @@ class PipelineOrchestrator:
         for art_type, tmp_paths in artifacts.items():
             for tmp_path in tmp_paths:
                 # 1. Determine final path (e.g., data.csv.abcd.tmp -> data.csv)
-                # We split at the first '.csv' to handle our UUID suffix pattern
+                # Split at the first '.csv' to handle our UUID suffix pattern
                 # Assumption: files are named like 'name.csv.<uuid>.tmp'
                 if ".csv" in tmp_path.name:
                     stem_part = tmp_path.name.split('.csv')[0]

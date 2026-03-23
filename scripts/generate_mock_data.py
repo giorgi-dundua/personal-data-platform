@@ -43,7 +43,7 @@ def generate_mock_data():
     df = pd.DataFrame(data)
 
     # 3. Save to processed folder (Mock Artifact)
-    # We save it alongside the real data but with a distinct name
+    # Save it alongside the real data but with a distinct name
     output_path = config.MERGED_DATA_DIR / "mock_daily_metrics.csv"
     output_path.parent.mkdir(parents=True, exist_ok=True)
     

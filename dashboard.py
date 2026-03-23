@@ -77,7 +77,7 @@ def add_crosshair(base, main_layers, point_charts=None):
     selectors = alt.Chart(base.data).mark_point().encode(
         x='date:T',
         opacity=alt.value(0),
-        # FIX: Disable tooltip on the selector so it doesn't block the real data
+        # Disable tooltip on the selector so it doesn't block the real data
         tooltip=alt.value(None) 
     ).add_params(nearest)
 
@@ -92,7 +92,7 @@ def add_crosshair(base, main_layers, point_charts=None):
     points_layers = []
     if point_charts:
         for chart in point_charts:
-            # We clone the chart but change mark to circle and set opacity logic
+            # Clone the chart but change mark to circle and set opacity logic
             # The tooltip encoding is inherited from the original 'chart'
             pt = chart.mark_circle(size=60).encode(
                 opacity=alt.condition(nearest, alt.value(1), alt.value(0))

@@ -4,7 +4,7 @@ set -e
 echo "🚀 Container Starting..."
 
 # 1. Decode Google Credentials
-# We check if the secret exists in the environment
+# Check if the secret exists in the environment
 if [ -n "$GOOGLE_CREDENTIALS_BASE64" ]; then
     echo "🔑 Decoding Google Credentials..."
     mkdir -p .secrets

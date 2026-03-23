@@ -1,0 +1,83 @@
+# Query: FIX
+# ContextLines: 1
+
+18 results - 14 files
+
+dashboard.py:
+  79          opacity=alt.value(0),
+  80:         # Disable tooltip on the selector so it doesn't block the real data
+  81          tooltip=alt.value(None) 
+
+Dockerfile:
+  53  
+  54: # Fix permissions and line endings inside the image
+  55  RUN chmod +x entrypoint.sh && \
+
+config/settings.py:
+  42  
+  43:     # --- Validation Config (Fixed using default_factory) ---
+  44      COLUMNS_BP: list[str] = field(default_factory=lambda: ["datetime", "systolic", "diastolic", "pulse"])
+
+ingestion/google_sheets_source.py:
+  64          unique_id = uuid.uuid4().hex[:4]
+  65:         tmp_path = self.csv_path.with_suffix(f".csv.{unique_id}.tmp")
+  66  
+
+pipeline/gates.py:
+  43          paths=[
+  44:             config.raw_gs_path,
+  45              config.RAW_MI_BAND_DATA_DIR,
+
+pipeline/hash_utils.py:
+  19      Returns:
+  20:         Hex-encoded hash string with ``\"sha256:\"`` prefix.
+  21      """
+
+  46      Returns:
+  47:         Hex-encoded hash string with ``\"sha256:\"`` prefix.
+  48      """
+
+pipeline/orchestrator.py:
+  78                  # 1. Determine final path (e.g., data.csv.abcd.tmp -> data.csv)
+  79:                 # Split at the first '.csv' to handle our UUID suffix pattern
+  80                  # Assumption: files are named like 'name.csv.<uuid>.tmp'
+
+  85                      # Fallback if naming convention varies
+  86:                     final_path = tmp_path.with_suffix("").with_suffix("")
+  87  
+
+pipeline/pipeline_state.py:
+  52          self.state_path.parent.mkdir(parents=True, exist_ok=True)
+  53:         tmp = self.state_path.with_suffix(".json.tmp")
+  54          try:
+
+pipeline/registry_json.py:
+  67          self.registry_path.parent.mkdir(parents=True, exist_ok=True)
+  68:         tmp = self.registry_path.with_suffix(".json.tmp")
+  69          try:
+
+processing/aggregators/merge_daily_metrics.py:
+  37      unique_id = uuid.uuid4().hex[:4]
+  38:     tmp_path = config.merged_path.with_suffix(f".csv.{unique_id}.tmp")
+  39  
+
+processing/normalizers/google_sheets_normalizer.py:
+  72          unique_id = uuid.uuid4().hex[:4]
+  73:         tmp_path = self.output_path.with_suffix(f".csv.{unique_id}.tmp")
+  74  
+
+processing/normalizers/mi_band_normalizer.py:
+  85          unique_id = uuid.uuid4().hex[:4]
+  86:         sleep_tmp = config.norm_sleep_path.with_suffix(f".csv.{unique_id}.tmp")
+  87:         hr_tmp = config.norm_hr_path.with_suffix(f".csv.{unique_id}.tmp")
+  88  
+
+processing/validators/validate.py:
+  47          unique_id = uuid.uuid4().hex[:4]
+  48:         tmp_path = self.output_path.with_suffix(f".csv.{unique_id}.tmp")
+  49  
+
+tests/test_registry.py:
+  6  
+  7: @pytest.fixture
+  8  def registry(tmp_path):

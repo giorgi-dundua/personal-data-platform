@@ -18,14 +18,14 @@ class Artifact(BaseModel):
     created_by_stage: str = ""
     created_by_run: str = ""
     inputs: List[str] = Field(default_factory=list)
-    # 'schema' is a reserved keyword in some SQL contexts, so we alias it in Python
+    # 'schema' is a reserved keyword in some SQL contexts, alias it in Python
     schema_def: Optional[Dict[str, Any]] = Field(default=None, alias="schema")
     metadata: Dict[str, Any] = Field(default_factory=dict)
 
     # Pydantic V2 Configuration
     model_config = ConfigDict(
         populate_by_name=True
-        # json_encoders removed here because we use @field_serializer below
+        # json_encoders removed here because @field_serializer used below
     )
 
     # INPUT: Convert string to Path when creating the object

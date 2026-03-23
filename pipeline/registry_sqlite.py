@@ -25,7 +25,7 @@ class SQLiteArtifactRegistry:
     def __enter__(self):
         """
         Allows usage in 'with' statements.
-        Since we use per-operation connections (_get_conn), this just returns self.
+        Since per-operation connections (_get_conn) is used, this just returns self.
         """
         return self
 
@@ -41,9 +41,9 @@ class SQLiteArtifactRegistry:
         Commits on success, rolls back on exception.
         """
         conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row  # Access columns by name
+        conn.row_factory = sqlite3.Row
         try:
-            with conn:  # Transaction block
+            with conn:
                 yield conn
         finally:
             conn.close()
@@ -88,14 +88,14 @@ class SQLiteArtifactRegistry:
                 :inputs, :schema_def, :metadata
             )
         """
-        # FIX: by_alias=False ensures we get 'schema_def' (matching DB column), not 'schema'
+        # by_alias=False ensures 'schema_def' (matching DB column), not 'schema'
         data = artifact.model_dump(by_alias=False)
 
         # Serialization for SQLite
         data['path'] = str(data['path'])
         data['created_at'] = data['created_at'].isoformat()
         data['inputs'] = json.dumps(data['inputs'])
-        data['schema_def'] = json.dumps(data['schema_def'])  # Now this key exists
+        data['schema_def'] = json.dumps(data['schema_def'])
         data['metadata'] = json.dumps(data['metadata'])
 
         with self._get_conn() as conn:
@@ -145,8 +145,8 @@ class SQLiteArtifactRegistry:
         Find an artifact that was produced by a specific input state.
         Used for Cache-Aware Execution (skipping stages).
         """
-        # We store inputs as a JSON list: ["hash_value"]
-        # We use the LIKE operator to find the hash inside that JSON string.
+        # Store inputs as a JSON list: ["hash_value"]
+        # Use the LIKE operator to find the hash inside that JSON string.
         query = "SELECT * FROM artifacts WHERE inputs LIKE ? ORDER BY created_at DESC LIMIT 1"
         search_pattern = f'%"{input_hash}"%'
 
