@@ -144,10 +144,13 @@ personal-data-platform/
 
 ## 🔜 Roadmap
 
-- [x] DAG Topological Sort
-- [x] SQLite Artifact Registry
-- [x] Atomic File Operations
-- [x] Visualization Layer (Streamlit/Altair)
-- [x] Docker Containerization & Cloud Sync
-- [x] CI/CD (GitHub Actions -> Fly.io)
-- [ ] Unit Tests for DAG Logic
+## Roadmap
+
+- [x] DAG Topological Sort with cycle detection
+- [x] SQLite Artifact Registry with versioning and lineage
+- [x] Atomic File Operations (Write-Ahead Log pattern)
+- [x] Visualization Layer (Streamlit / Altair)
+- [x] Docker Containerization & Cloud State Sync
+- [x] CI/CD (GitHub Actions → Fly.io, scheduled weekly pipeline run)
+- [x] Unit Tests (DAG executor, SQLite registry)
+- [ ] Test stage in CI pipeline (run pytest before deploy)

@@ -23,13 +23,18 @@ def topo_sort(dag: Mapping[str, dict[str, Any]]) -> list[str]:
         RecursionError: If there is a cycle in the DAG (not allowed).
     """
     visited: set[str] = set()
+    in_stack : set[str] = set()
     order: list[str] = []
 
     def visit(target_node: str) -> None:
+        if target_node in in_stack:
+            raise ValueError(f"Cycle detected at node: '{target_node}'")
         if target_node in visited:
             return
+        in_stack.add(target_node)
         for dep in dag[target_node]["depends_on"]:
             visit(dep)
+        in_stack.remove(target_node)
         visited.add(target_node)
         order.append(target_node)
 

@@ -9,7 +9,8 @@ def test_topo_sort_linear():
         "C": {"depends_on": ["B"]},
     }
     order = topo_sort(dag)
-    assert order == ["A", "B", "C"]
+    assert order.index("A") < order.index("B")
+    assert order.index("B") < order.index("C")
 
 def test_topo_sort_branching():
     """Test branching: A -> B, A -> C, (B,C) -> D"""
@@ -26,10 +27,16 @@ def test_topo_sort_branching():
     assert set(order[1:3]) == {"B", "C"}
 
 def test_topo_sort_cycle():
-    """Test that cycles raise a RecursionError"""
+    """Test that cycles raise a ValueError with a meaningful message"""
     dag = {
         "A": {"depends_on": ["B"]},
         "B": {"depends_on": ["A"]},
     }
-    with pytest.raises(RecursionError):
+    with pytest.raises(ValueError, match="Cycle detected"):
         topo_sort(dag)
+
+def test_topo_sort_empty():
+    assert topo_sort({}) == []
+
+def test_topo_sort_single_node():
+    assert topo_sort({"A": {"depends_on": []}}) == ["A"]
